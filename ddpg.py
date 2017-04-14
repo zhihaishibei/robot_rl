@@ -9,13 +9,13 @@ from tensorflow_grad_inverter import grad_inverter
 REPLAY_MEMORY_SIZE = 10000
 BATCH_SIZE = 64
 GAMMA=0.99
-is_grad_inverter = True
+is_grad_inverter = False
 class DDPG:
     
     """ Deep Deterministic Policy Gradient Algorithm"""
     def __init__(self,env, is_batch_norm):
-        self.actor_net = ActorNet()
-        self.state_net = StateNet()
+        self.actor_net = ActorNet('099.ckpt')
+        self.state_net = StateNet('../099.ckpt')
         
         #Initialize Buffer Network:
         self.replay_memory = deque()
@@ -30,8 +30,8 @@ class DDPG:
         self.grad_inv = grad_inverter(action_bounds)
         
         
-    def evaluate_actor(self, state_t):
-        return self.actor_net.evaluate_actor(state_t)
+    def evaluate_actor(self, x,x_):
+        return self.actor_net.evaluate_actor(x,x_)
     
     def add_experience(self, observation_1, observation_2, action, reward, done):
         self.observation_1 = observation_1
