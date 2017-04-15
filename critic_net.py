@@ -7,7 +7,7 @@ TAU = 0.001
 BATCH_SIZE = 64
 N_HIDDEN_1 = 400
 N_HIDDEN_2 = 300
-class CriticNet_bn:
+class CriticNet:
     """ Critic Q value model with batch normalization of the DDPG algorithm """
     def __init__(self,num_states,num_actions):
         
@@ -108,8 +108,7 @@ class CriticNet_bn:
                   self.t_W3_c.assign(TAU*self.W3_c+(1-TAU)*self.t_W3_c),
 				self.t_B3_c.assign(TAU*self.B3_c+(1-TAU)*self.t_B3_c),
                   self.t_H1_c_bn.updateTarget,
-                  self.t_H2_c_bn.updateTarget
-			])
+                  self.t_H2_c_bn.updateTarget])
          
 
 

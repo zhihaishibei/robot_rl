@@ -325,7 +325,7 @@ class ActorNet:
         
     def train_actor(self,x,x_,y,is_training=True):
         _,loss,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_=\
-        self.sess.run([self.train_step,self.loss,self.conv1_bn.train_mean,self.conv1_bn.train_var,self.conv2_bn.train_mean,self.conv2_bn.train_var,\
+        self.sess.run([self.optimizer,self.loss,self.conv1_bn.train_mean,self.conv1_bn.train_var,self.conv2_bn.train_mean,self.conv2_bn.train_var,\
             self.conv3_bn.train_mean,self.conv3_bn.train_var,self.conv4_bn.train_mean, self.conv4_bn.train_var,self.conv5_bn.train_mean, self.conv5_bn.train_var,\
             self.conv1_bn_.train_mean,self.conv1_bn_.train_var,self.conv2_bn_.train_mean,self.conv2_bn_.train_var,self.conv3_bn_.train_mean,self.conv3_bn_.train_var,\
             self.conv4_bn_.train_mean,self.conv4_bn_.train_var,self.conv5_bn_.train_mean, self.conv5_bn_.train_var,self.conv6_bn.train_mean,self.conv6_bn.train_var,\

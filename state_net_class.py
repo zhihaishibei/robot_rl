@@ -97,21 +97,22 @@ class StateNet:
              'conv3_b_d':self.conv3_b_d,'conv4_w_d':self.conv4_w_d,  'conv4_b_d':self.conv4_b_d, 'fc1_w_d':self.fc1_w_d, 'fc2_w_d':self.fc2_w_d,
              'fc1_b_d':self.fc1_b_d, 'fc2_b_d':self.fc2_b_d })
 
-            self.loss = tf.reduce_mean(tf.square(self.x-self.decode))
-            self.batch = tf.Variable(0, dtype="float", trainable=False)
-            self.learning_rate = tf.train.exponential_decay(
-              0.001,                # Base learning rate.
-              self.batch * 32,  # Current index into the dataset.
-              12000,          # Decay step.
-              0.9,                # Decay rate.
-              staircase=True)
-            self.train_step = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(self.loss,global_step = self.batch)
+#            self.loss = tf.reduce_mean(tf.square(self.x-self.decode))
+#            self.batch = tf.Variable(0, dtype="float", trainable=False)
+#            self.learning_rate = tf.train.exponential_decay(
+#              0.001,                # Base learning rate.
+#              self.batch * 32,  # Current index into the dataset.
+#              12000,          # Decay step.
+#              0.9,                # Decay rate.
+#              staircase=True)
+#            self.train_step = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(self.loss,global_step = self.batch)
+            #restore trained model
             self.saver.restore(self.sess,model)
             #self.sess.run(tf.global_variables_initializer())
             
             
     def evaluate_state(self,x,is_training=False):
-        return self.sess.run(self.decode, feed_dict={self.x:x,self.is_training:is_training}) 
+        return self.sess.run(self.encode, feed_dict={self.x:x,self.is_training:is_training}) 
         
     def evaluate_state_loss(self,x,is_training=False):
         return self.sess.run(self.loss,feed_dict={self.x:x,self.is_training:is_training})

@@ -5,6 +5,7 @@ from critic_net import CriticNet
 from collections import deque
 import random
 from tensorflow_grad_inverter import grad_inverter
+from PIL import Image
 
 REPLAY_MEMORY_SIZE = 10000
 BATCH_SIZE = 64
@@ -13,7 +14,7 @@ is_grad_inverter = False
 class DDPG:
     
     """ Deep Deterministic Policy Gradient Algorithm"""
-    def __init__(self,env, is_batch_norm):
+    def __init__(self):
         self.actor_net = ActorNet('099.ckpt')
         self.state_net = StateNet('../099.ckpt')
         
@@ -24,10 +25,16 @@ class DDPG:
         self.time_step = 0
         self.counter = 0
         
-        action_max = np.array(env.action_space.high).tolist()
-        action_min = np.array(env.action_space.low).tolist()        
-        action_bounds = [action_max,action_min] 
-        self.grad_inv = grad_inverter(action_bounds)
+        imgrefer = np.array(Image.open('refer.img')) 
+        #refer data is used to infer actor 
+        self.observe_refer_data = np.zeros(BATCH_SIZE,300,400,1)
+        for i in range(BATCH_SIZE):
+            self.observe_refer_data[i,] = imgrefer[:,:,np.newaxis]
+        
+#        action_max = np.array(env.action_space.high).tolist()
+#        action_min = np.array(env.action_space.low).tolist()        
+#        action_bounds = [action_max,action_min] 
+#        self.grad_inv = grad_inverter(action_bounds)
         
         
     def evaluate_actor(self, x,x_):
@@ -47,17 +54,34 @@ class DDPG:
         
     def minibatches(self):
         batch = random.sample(self.replay_memory, BATCH_SIZE)
-        #state t
-        self.state_t_batch = [item[0] for item in batch]
-        self.state_t_batch = np.array(self.state_t_batch)
-        #state t+1        
-        self.state_t_1_batch = [item[1] for item in batch]
-        self.state_t_1_batch = np.array( self.state_t_1_batch)
+        #state t and obeservation t
+        self.observe_t_data_batch = [item[0] for item in batch]
+        self.observe_t_data = np.zeros([BATCH_SIZE,300,400,1])
+        self.state_t_data = np.zeros([BATCH_SIZE,128])
+        
+        for i in range(BATCH_SIZE):
+            temp_state = self.state_net.evaluate_state(self.observe_t_data_batch[i])
+            self.state_t_data[i] = temp_state
+            observe_t_img = self.observe_t_data_batch[i][:,:,np.newaxis]
+            self.observe_t_data[i,:,:,:] = observe_t_img
+
+        #state t+1 and observation t
+        self.observe_t_1_data_batch = [item[1] for item in batch]
+        self.observe_t_1_data = np.zeros([BATCH_SIZE,300,400,1])
+        self.state_t_1_data = np.zeros([BATCH_SIZE,128])        
+        for i in range(BATCH_SIZE):
+            temp_state = self.state_net.evaluate_state(self.observe_t_1_data_batch[i])
+            self.state_t_1_data[i] = temp_state
+            observe_t_1_img = self.observe_data_batch_[i][:,:,np.newaxis]
+            self.observe_t_1_data[i,:,:,:] = observe_t_1_img
+        #action 
         self.action_batch = [item[2] for item in batch]
         self.action_batch = np.array(self.action_batch)
-        self.action_batch = np.reshape(self.action_batch,[len(self.action_batch),self.num_actions])
+        self.action_batch = np.reshape(self.action_batch,[len(self.action_batch),-1])
+        #reward 
         self.reward_batch = [item[3] for item in batch]
         self.reward_batch = np.array(self.reward_batch)
+        #done
         self.done_batch = [item[4] for item in batch]
         self.done_batch = np.array(self.done_batch)  
                   
@@ -65,9 +89,10 @@ class DDPG:
     def train(self):
         #sample a random minibatch of N transitions from R
         self.minibatches()
-        self.action_t_1_batch = self.actor_net.evaluate_target_actor(self.state_t_1_batch)
+        #action t1
+        self.action_t_1_data = self.actor_net.evaluate_target_actor(self.observe_t_1_data,self.observe_refer_data)
         #Q'(s_i+1,a_i+1)        
-        q_t_1 = self.critic_net.evaluate_target_critic(self.state_t_1_batch,self.action_t_1_batch) 
+        q_t_1 = self.critic_net.evaluate_target_critic(self.state_t_1_data,self.action_t_1_data) 
         self.y_i_batch=[]         
         for i in range(0,BATCH_SIZE):
                            
@@ -81,10 +106,10 @@ class DDPG:
         self.y_i_batch = np.reshape(self.y_i_batch,[len(self.y_i_batch),1])
         
         # Update critic by minimizing the loss
-        self.critic_net.train_critic(self.state_t_batch, self.action_batch,self.y_i_batch)
+        self.critic_net.train_critic(self.state_t_data, self.action_batch,self.y_i_batch)
         
         # Update actor proportional to the gradients:
-        action_for_delQ = self.evaluate_actor(self.state_t_batch) 
+        action_for_delQ = self.evaluate_actor(self.observe_t_data,self.observe_refer_data) 
         
         if is_grad_inverter:        
             self.del_Q_a = self.critic_net.compute_delQ_a(self.state_t_batch,action_for_delQ)#/BATCH_SIZE            
@@ -93,23 +118,9 @@ class DDPG:
             self.del_Q_a = self.critic_net.compute_delQ_a(self.state_t_batch,action_for_delQ)[0]#/BATCH_SIZE
         
         # train actor network proportional to delQ/dela and del_Actor_model/del_actor_parameters:
-        self.actor_net.train_actor(self.state_t_batch,self.del_Q_a)
+        self.actor_net.train_actor(self.observe_t_data,self.observe_refer_data,self.del_Q_a)
  
         # Update target Critic and actor network
         self.critic_net.update_target_critic()
         self.actor_net.update_target_actor()
         
-                
-        
-        
-        
-                
-        
-        
-        
-                     
-                 
-        
-
-
-
