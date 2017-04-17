@@ -37,8 +37,8 @@ class DDPG:
 #        self.grad_inv = grad_inverter(action_bounds)
         
         
-    def evaluate_actor(self, x,x_):
-        return self.actor_net.evaluate_actor(x,x_)
+    def evaluate_actor(self, x):
+        return self.actor_net.evaluate_actor(x,self.observe_refer_data)
     
     def add_experience(self, observation_1, observation_2, action, reward, done):
         self.observation_1 = observation_1

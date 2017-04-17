@@ -1,17 +1,31 @@
 #Implementation of Deep Deterministic Gradient with Tensor Flow"
 # Author: Steven Spielberg Pon Kumar (github.com/stevenpjg)
 
+import gym
+from gym.spaces import Box, Discrete
 import numpy as np
 from ddpg import DDPG
 from ou_noise import OUNoise
+from PIL import Image
+
 #specify parameters here:
 episodes=10000
 is_batch_norm = False #batch normalization switch
 
+x_ = np.array(Image.open('refer.tif'))
+# x is a array
+def compute_reward(x):
+    return np.square(x-x_)/12000
+
 def main():
+    experiment= 'MountainCarContinuous-v0' #specify environments here
+    env= gym.make(experiment)
+    steps= env.spec.timestep_limit #steps per episode    
+    assert isinstance(env.observation_space, Box), "observation space must be continuous"
+    assert isinstance(env.action_space, Box), "action space must be continuous"
     
-    # initialize critic,actor,target critic, target actor network  and replay buffer   
-    agent = DDPG()
+    #Randomly initialize critic,actor,target critic, target actor network  and replay buffer   
+    agent = DDPG(env, is_batch_norm)
     exploration_noise = OUNoise(env.action_space.shape[0])
     counter=0
     reward_per_episode = 0    
