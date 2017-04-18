@@ -1,77 +1,118 @@
 #Implementation of Deep Deterministic Gradient with Tensor Flow"
 # Author: Steven Spielberg Pon Kumar (github.com/stevenpjg)
 
-import gym
-from gym.spaces import Box, Discrete
 import numpy as np
 from ddpg import DDPG
 from ou_noise import OUNoise
 from PIL import Image
 
-#specify parameters here:
-episodes=10000
-is_batch_norm = False #batch normalization switch
 
 x_ = np.array(Image.open('refer.tif'))
-# x is a array
+#the type of x and x_ is [300,400] 
 def compute_reward(x):
     return np.square(x-x_)/12000
 
+data = dict{x_t,action,x_t_1,reward}
+
 def main():
-    experiment= 'MountainCarContinuous-v0' #specify environments here
-    env= gym.make(experiment)
-    steps= env.spec.timestep_limit #steps per episode    
-    assert isinstance(env.observation_space, Box), "observation space must be continuous"
-    assert isinstance(env.action_space, Box), "action space must be continuous"
-    
     #Randomly initialize critic,actor,target critic, target actor network  and replay buffer   
-    agent = DDPG(env, is_batch_norm)
+    agent = DDPG()
     exploration_noise = OUNoise(env.action_space.shape[0])
     counter=0
     reward_per_episode = 0    
     total_reward=0
-    num_states = env.observation_space.shape[0]
-    num_actions = env.action_space.shape[0]    
-    print "Number of States:", num_states
-    print "Number of Actions:", num_actions
-    print "Number of Steps per episode:", steps
     #saving reward:
     reward_st = np.array([0])
       
+    # network setup
+    s = socket.socket()         # Create a socket object
+    #host = socket.gethostname() # Get local machine name
+    host = ''                    # Get local machine name
+    port = 21567  # Reserve a port for your service.
+    s.bind((host, port))
     
-    for i in xrange(episodes):
-        print "==== Starting episode no:",i,"====","\n"
-        observation = env.reset()
-        reward_per_episode = 0
-        for t in xrange(steps):
-            #rendering environmet (optional)            
-            env.render()
-            x = observation
-            action = agent.evaluate_actor(np.reshape(x,[1,num_states]))
-            noise = exploration_noise.noise()
-            action = action[0] + noise #Select action according to current policy and exploration noise
-            print "Action at step", t ," :",action,"\n"
-            
-            observation,reward,done,info=env.step(action)
-            
-            #add s_t,s_t+1,action,reward to experience memory
-            agent.add_experience(x,observation,action,reward,done)
-            #train critic and actor network
-            if counter > 64: 
-                agent.train()
-            reward_per_episode+=reward
-            counter+=1
-            #check if episode ends:
-            if (done or (t == steps-1)):
-                print 'EPISODE: ',i,' Steps: ',t,' Total Reward: ',reward_per_episode
-                print "Printing reward to file"
-                exploration_noise.reset() #reinitializing random noise for action exploration
-                reward_st = np.append(reward_st,reward_per_episode)
-                np.savetxt('episode_reward.txt',reward_st, newline="\n")
-                print '\n\n'
-                break
-    total_reward+=reward_per_episode            
-    print "Average reward per episode {}".format(total_reward / episodes)    
+    s.listen(5)
+    imgorigin_t = np.zeros(300,400)
+    imgorigin_t_1 = np.zeros(300,400)
+    actor_t = np.zeros(6)
+    actor_t_1 =np.zeros(6)
+    index = 0
+
+
+    #the first time
+    c, addr = s.accept()     # Establish connection with client.
+    print ('Got connection from'), addr
+    print ("Receiving...")
+    l = c.recv(1024)
+    f = open('temp.tif','wb')
+    while (l):
+        f.write(l)
+        l = c.recv(1024)
+    f.close()
+    print ("Done Receiving")
+    imgorigin_t = np.array(Image.open('temp.tif'))
+    tempimg = imgorigin_t[np.newaxis,:,:,np.newaxis]
+    tempimg = tempimg.transpose([0,2,1,3])
+    test_pred = agent.evaluate_actor(tempimg)
+    action_t = test_pred[0]
+
+    print action_t
+
+    str_buf = ''
+    str_buf = str_buf+str(action_t[0,0])+" "
+    str_buf = str_buf+str(action_t[0,1])+" "
+    str_buf = str_buf+str(action_t[0,2])+" "
+    str_buf = str_buf+str(action_t[0,3])+" "
+    str_buf = str_buf+str(action_t[0,4])+" "
+    str_buf = str_buf+str(action_t[0,5])+" "
+    
+    imgorigin_t_1 = imgorigin_t
+    actor_t_1 = actor_t
+
+    c.send(str_buf)
+    c.close()
+    
+    index =1
+    while True:
+        #update imgorigin_t and actor_t
+        imgorigin_t = img_origin_t_1
+        actor_t = actor_t_1
+        c, addr = s.accept()     # Establish connection with client.
+        print ('Got connection from'), addr
+        print ("Receiving...")
+        l = c.recv(1024)
+        f = open('temp.tif','wb')
+        while (l):
+            f.write(l)
+            l = c.recv(1024)
+        f.close()
+        print ("Done Receiving")
+        imgorigin_t_1 = np.array(Image.open('temp.tif'))
+        tempimg = imgorigin_t_1[np.newaxis,:,:,np.newaxis]
+        tempimg = tempimg.transpose([0,2,1,3])
+        test_pred = agent.evaluate_actor(tempimg)
+        action_t_1 = test_pred[0]
+        print action_t_1
+
+        reward = compute_reward(imgorigin_t_1)
+        agent.add_experience(imgorigin_t,imgorigin_t_1,action_t,reward)
+
+        if index > 32:
+            agent.train()
+
+        str_buf = ''
+        str_buf = str_buf+str(action_t_1[0,0])+" "
+        str_buf = str_buf+str(action_t_1[0,1])+" "
+        str_buf = str_buf+str(action_t_1[0,2])+" "
+        str_buf = str_buf+str(action_t_1[0,3])+" "
+        str_buf = str_buf+str(action_t_1[0,4])+" "
+        str_buf = str_buf+str(action_t_1[0,5])+" "
+        c.send(str_buf)
+        print("send action finished!")
+        c.close()
+
+        index = index+1
+
 
 
 if __name__ == '__main__':

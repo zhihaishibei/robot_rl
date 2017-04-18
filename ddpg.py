@@ -27,16 +27,20 @@ class DDPG:
         
         imgrefer = np.array(Image.open('refer.img')) 
         #refer data is used to infer actor 
-        self.observe_refer_data = np.zeros(BATCH_SIZE,300,400,1)
+        self.observe_refer_data = np.zeors(1,300,400,1)
+        self.observe_refer_data[0,]=imgrefer[:,:,np.newaxis]
+        self.observe_refer_data = self.observe_refer_data.transpose([0,2,1,3])
+        self.observe_refer_datas = np.zeros(BATCH_SIZE,300,400,1)
         for i in range(BATCH_SIZE):
-            self.observe_refer_data[i,] = imgrefer[:,:,np.newaxis]
+            self.observe_refer_datas[i,] = imgrefer[:,:,np.newaxis]
+        self.observe_refer_datas = self.observe_refer_datas.transpose([0,2,1,3])
         
 #        action_max = np.array(env.action_space.high).tolist()
 #        action_min = np.array(env.action_space.low).tolist()        
 #        action_bounds = [action_max,action_min] 
 #        self.grad_inv = grad_inverter(action_bounds)
         
-        
+    # the type of x is [300,400]    
     def evaluate_actor(self, x):
         return self.actor_net.evaluate_actor(x,self.observe_refer_data)
     
@@ -118,7 +122,7 @@ class DDPG:
             self.del_Q_a = self.critic_net.compute_delQ_a(self.state_t_batch,action_for_delQ)[0]#/BATCH_SIZE
         
         # train actor network proportional to delQ/dela and del_Actor_model/del_actor_parameters:
-        self.actor_net.train_actor(self.observe_t_data,self.observe_refer_data,self.del_Q_a)
+        self.actor_net.train_actor(self.observe_t_data,self.observe_refer_datas,self.del_Q_a)
  
         # Update target Critic and actor network
         self.critic_net.update_target_critic()
