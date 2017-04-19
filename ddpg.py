@@ -6,6 +6,11 @@ from collections import deque
 import random
 from tensorflow_grad_inverter import grad_inverter
 from PIL import Image
+import pickle
+
+#model path
+actornet_pre_trained = ''
+statenet_pre_trained = ''
 
 REPLAY_MEMORY_SIZE = 10000
 BATCH_SIZE = 64
@@ -15,8 +20,8 @@ class DDPG:
     
     """ Deep Deterministic Policy Gradient Algorithm"""
     def __init__(self):
-        self.actor_net = ActorNet('099.ckpt')
-        self.state_net = StateNet('../099.ckpt')
+        self.actor_net = ActorNet(actornet_pre_trained)
+        self.state_net = StateNet(statenet_pre_trained) 
         
         #Initialize Buffer Network:
         self.replay_memory = deque()
@@ -35,21 +40,23 @@ class DDPG:
             self.observe_refer_datas[i,] = imgrefer[:,:,np.newaxis]
         self.observe_refer_datas = self.observe_refer_datas.transpose([0,2,1,3])
         
-#        action_max = np.array(env.action_space.high).tolist()
-#        action_min = np.array(env.action_space.low).tolist()        
-#        action_bounds = [action_max,action_min] 
-#        self.grad_inv = grad_inverter(action_bounds)
         
     # the type of x is [300,400]    
     def evaluate_actor(self, x):
         return self.actor_net.evaluate_actor(x,self.observe_refer_data)
     
-    def add_experience(self, observation_1, observation_2, action, reward, done):
+    def add_experience(self, observation_1, observation_2, action, reward):
         self.observation_1 = observation_1
         self.observation_2 = observation_2
         self.action = action
         self.reward = reward
         self.done = done
+        data = {'ot':a,'ot_1':b,'done':c,'action':d}
+        output = open('data.pkl', 'wb')
+
+        # Pickle dictionary using protocol 0.
+        pickle.dump(data, output)
+        output.close()
         self.replay_memory.append((self.observation_1, self.observation_2, self.action, self.reward,self.done))
         self.time_step = self.time_step + 1
         if(len(self.replay_memory)>REPLAY_MEMORY_SIZE):
@@ -69,6 +76,7 @@ class DDPG:
             observe_t_img = self.observe_t_data_batch[i][:,:,np.newaxis]
             self.observe_t_data[i,:,:,:] = observe_t_img
 
+        self.observe_t_data  = self.observe_t_data.transpose([0,2,1,3])
         #state t+1 and observation t
         self.observe_t_1_data_batch = [item[1] for item in batch]
         self.observe_t_1_data = np.zeros([BATCH_SIZE,300,400,1])
@@ -78,6 +86,7 @@ class DDPG:
             self.state_t_1_data[i] = temp_state
             observe_t_1_img = self.observe_data_batch_[i][:,:,np.newaxis]
             self.observe_t_1_data[i,:,:,:] = observe_t_1_img
+        self.observe_t_1_data = self.observe_t_1_data.transpose([0,2,1,3])
         #action 
         self.action_batch = [item[2] for item in batch]
         self.action_batch = np.array(self.action_batch)

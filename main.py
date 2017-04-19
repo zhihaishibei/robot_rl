@@ -95,7 +95,7 @@ def main():
         print action_t_1
 
         reward = compute_reward(imgorigin_t_1)
-        agent.add_experience(imgorigin_t,imgorigin_t_1,action_t,reward)
+        agent.add_experience(imgorigin_t,imgorigin_t_1,action_t,reward,index)
 
         if index > 32:
             agent.train()
