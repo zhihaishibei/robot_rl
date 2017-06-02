@@ -1,3 +1,7 @@
+#!/usr/bin/env python
+
+'''the clas of ddpg'''
+
 import numpy as np
 from rl_actor_class import ActorNet
 from state_encoder import StateNet
@@ -7,133 +11,117 @@ import random
 from tensorflow_grad_inverter import grad_inverter
 from PIL import Image
 import pickle
+import data_save_restore
 
-#model path
-actornet_pre_trained = ''
-statenet_pre_trained = ''
+# model path
+ACTORNET_PRE_TRAINED = ''
+STATENET_PRE_TRAINED = ''
+IMG_REFER = ''
 
 REPLAY_MEMORY_SIZE = 10000
 BATCH_SIZE = 64
-GAMMA=0.99
-is_grad_inverter = False
+GAMMA = 0.99
+IS_GRAD_INVERTER = False
+
+
 class DDPG:
-    
+
     """ Deep Deterministic Policy Gradient Algorithm"""
+
     def __init__(self):
-        self.actor_net = ActorNet(actornet_pre_trained)
-        self.state_net = StateNet(statenet_pre_trained) 
-        
-        #Initialize Buffer Network:
-        self.replay_memory = deque()
-        
-        #Intialize time step:
-        self.time_step = 0
-        self.counter = 0
-        
-        imgrefer = np.array(Image.open('refer.img')) 
-        #refer data is used to infer actor 
-        self.observe_refer_data = np.zeors(1,300,400,1)
-        self.observe_refer_data[0,]=imgrefer[:,:,np.newaxis]
-        self.observe_refer_data = self.observe_refer_data.transpose([0,2,1,3])
-        self.observe_refer_datas = np.zeros(BATCH_SIZE,300,400,1)
+        self.actor_net = ActorNet(ACTORNET_PRE_TRAINED)
+        self.state_net = StateNet(STATENET_PRE_TRAINED)
+
+        # initialize the nember of data have been saved
+        self.data_size = 0
+        imgrefer = np.array(Image.open(IMG_REFER))
+        # refer data is used to infer actor
+        self.observe_refer_data = np.zeors(1, 300, 400, 1)
+        self.observe_refer_data[0, ] = imgrefer[:, :, np.newaxis]
+        self.observe_refer_data = self.observe_refer_data.transpose([0, 2, 1, 3])
+        # refer datas is used to train
+        self.observe_refer_datas = np.zeros(BATCH_SIZE, 300, 400, 1)
         for i in range(BATCH_SIZE):
-            self.observe_refer_datas[i,] = imgrefer[:,:,np.newaxis]
-        self.observe_refer_datas = self.observe_refer_datas.transpose([0,2,1,3])
-        
-        
-    # the type of x is [300,400]    
+            self.observe_refer_datas[i, ] = imgrefer[:, :, np.newaxis]
+        self.observe_refer_datas = self.observe_refer_datas.transpose([0, 2, 1, 3])
+
+    # the type of x is [1, 400, 300, 1]
     def evaluate_actor(self, x):
-        return self.actor_net.evaluate_actor(x,self.observe_refer_data)
-    
-    def add_experience(self, observation_1, observation_2, action, reward):
-        self.observation_1 = observation_1
-        self.observation_2 = observation_2
-        self.action = action
-        self.reward = reward
-        self.done = done
-        data = {'ot':a,'ot_1':b,'done':c,'action':d}
-        output = open('data.pkl', 'wb')
+        return self.actor_net.evaluate_actor(x, self.observe_refer_data)
 
-        # Pickle dictionary using protocol 0.
-        pickle.dump(data, output)
-        output.close()
-        self.replay_memory.append((self.observation_1, self.observation_2, self.action, self.reward,self.done))
-        self.time_step = self.time_step + 1
-        if(len(self.replay_memory)>REPLAY_MEMORY_SIZE):
-            self.replay_memory.popleft()
-            
-        
+    # the type of
+    def add_experience(self, observation_1, observation_2, action, reward, file_name):
+        dsr = DataSaveRestore() 
+        dsr.save_data(observation_1, observation_2, action, reward, file_name)
+        self.data_size = self.data_size + 1
+
+    # return a minibatch for train 
     def minibatches(self):
-        batch = random.sample(self.replay_memory, BATCH_SIZE)
-        #state t and obeservation t
-        self.observe_t_data_batch = [item[0] for item in batch]
-        self.observe_t_data = np.zeros([BATCH_SIZE,300,400,1])
-        self.state_t_data = np.zeros([BATCH_SIZE,128])
-        
-        for i in range(BATCH_SIZE):
-            temp_state = self.state_net.evaluate_state(self.observe_t_data_batch[i])
-            self.state_t_data[i] = temp_state
-            observe_t_img = self.observe_t_data_batch[i][:,:,np.newaxis]
-            self.observe_t_data[i,:,:,:] = observe_t_img
+        dsr = DataSaveRestore() 
+        self.observe_t_data_batch = np.zeros([BATCH_SIZE, 300, 400, 1])
+        self.observe_t_1_data_batch = np.zeros([BATCH_SIZE, 300, 400, 1])
+        self.state_t_data = np.zeros([BATCH_SIZE, 128])
+        self.state_t_1_data = np.zeros([BATCH_SIZE, 128])
+        self.action_batch = np.zeros([BATCH_SIZE, 6])
+        self.reward_batch = np.zeros([BATCH_SIZE, 1])
+        data_range = []
 
-        self.observe_t_data  = self.observe_t_data.transpose([0,2,1,3])
-        #state t+1 and observation t
-        self.observe_t_1_data_batch = [item[1] for item in batch]
-        self.observe_t_1_data = np.zeros([BATCH_SIZE,300,400,1])
-        self.state_t_1_data = np.zeros([BATCH_SIZE,128])        
-        for i in range(BATCH_SIZE):
-            temp_state = self.state_net.evaluate_state(self.observe_t_1_data_batch[i])
-            self.state_t_1_data[i] = temp_state
-            observe_t_1_img = self.observe_data_batch_[i][:,:,np.newaxis]
-            self.observe_t_1_data[i,:,:,:] = observe_t_1_img
-        self.observe_t_1_data = self.observe_t_1_data.transpose([0,2,1,3])
-        #action 
-        self.action_batch = [item[2] for item in batch]
-        self.action_batch = np.array(self.action_batch)
-        self.action_batch = np.reshape(self.action_batch,[len(self.action_batch),-1])
-        #reward 
-        self.reward_batch = [item[3] for item in batch]
-        self.reward_batch = np.array(self.reward_batch)
-        #done
-        self.done_batch = [item[4] for item in batch]
-        self.done_batch = np.array(self.done_batch)  
-                  
-                 
-    def train(self):
-        #sample a random minibatch of N transitions from R
-        self.minibatches()
-        #action t1
-        self.action_t_1_data = self.actor_net.evaluate_target_actor(self.observe_t_1_data,self.observe_refer_data)
-        #Q'(s_i+1,a_i+1)        
-        q_t_1 = self.critic_net.evaluate_target_critic(self.state_t_1_data,self.action_t_1_data) 
-        self.y_i_batch=[]         
-        for i in range(0,BATCH_SIZE):
-                           
-            if self.done_batch[i]:
-                self.y_i_batch.append(self.reward_batch[i])
-            else:
-                
-                self.y_i_batch.append(self.reward_batch[i] + GAMMA*q_t_1[i][0])                 
-        
-        self.y_i_batch=np.array(self.y_i_batch)
-        self.y_i_batch = np.reshape(self.y_i_batch,[len(self.y_i_batch),1])
-        
-        # Update critic by minimizing the loss
-        self.critic_net.train_critic(self.state_t_data, self.action_batch,self.y_i_batch)
-        
-        # Update actor proportional to the gradients:
-        action_for_delQ = self.evaluate_actor(self.observe_t_data,self.observe_refer_data) 
-        
-        if is_grad_inverter:        
-            self.del_Q_a = self.critic_net.compute_delQ_a(self.state_t_batch,action_for_delQ)#/BATCH_SIZE            
-            self.del_Q_a = self.grad_inv.invert(self.del_Q_a,action_for_delQ) 
+        if self.data_size < REPLAY_MEMORY_SIZE:
+            data_range = self.__random_without_same(0, self.data_size, BATCH_SIZE)
         else:
-            self.del_Q_a = self.critic_net.compute_delQ_a(self.state_t_batch,action_for_delQ)[0]#/BATCH_SIZE
-        
+            data_range = self.__random_without_same(self.data_size - REPLAY_MEMORY_SIZE)
+
+        # state t,t1, and obeservation t,t1
+        for (i, j) in zip(data_range, BATCH_SIZE):
+            temp_data = dsr.restore_data('%d.pkl'%(i))
+            temp_data_observe_t = temp_data.state_t
+            temp_data_observe_t_1 = temp_data.state_t_1
+            self.observe_t_data_batch[j, :, :, :] = temp_data_observe_t[:, :, np.newaxis] 
+            self.observe_t_1_data_batch[j, :, :, :] = temp_data_observe_t_1[:, :, np.newaxis]
+            self.action_batch[i, :] = temp_data.actor
+            self.reward_batch[i, :] = temp_data.reward
+
+        self.observe_t_data_batch = self.observe_t_data_batch.transpose([0, 2, 1, 3])
+        self.state_t_data = self.state_net.evaluate_state(self.observe_t_data_batch)
+        self.observe_t_1_data_batch = self.observe_t_1_data_batch.transpose([0, 2, 1, 3])
+        self.state_t_1_data = self.state_net.evaluate_state(self.observe_t_1_data_batch)
+
+    def train(self):
+        # sample a random minibatch of N transitions from R
+        self.minibatches()
+        # action t1
+        self.action_t_1_data = self.actor_net.evaluate_target_actor(
+            self.observe_t_1_data_batch, self.observe_refer_data)
+        # Q'(s_i+1,a_i+1)
+        q_t_1 = self.critic_net.evaluate_target_critic(
+            self.state_t_1_data, self.action_t_1_data)
+        self.y_i_batch = []
+        for i in range(0, BATCH_SIZE):
+            self.y_i_batch.append( self.reward_batch[i] + GAMMA * q_t_1[i][0])
+
+        self.y_i_batch = np.array(self.y_i_batch)
+        self.y_i_batch = np.reshape(self.y_i_batch, [len(self.y_i_batch), 1])
+
+        # Update critic by minimizing the loss
+        self.critic_net.train_critic(
+            self.state_t_data, self.action_batch, self.y_i_batch)
+
+        # Update actor proportional to the gradients:
+        action_for_delQ = self.evaluate_actor(
+            self.observe_t_data_batch, self.observe_refer_data)
+
+        self.del_Q_a = self.critic_net.compute_delQ_a(
+            self.observe_t_data_batch, self.observe_refer_datas,  action_for_delQ)[0]  # /BATCH_SIZE
+
         # train actor network proportional to delQ/dela and del_Actor_model/del_actor_parameters:
-        self.actor_net.train_actor(self.observe_t_data,self.observe_refer_datas,self.del_Q_a)
- 
+        self.actor_net.train_actor(
+            self.observe_t_data, self.observe_refer_datas, self.del_Q_a)
+
         # Update target Critic and actor network
         self.critic_net.update_target_critic()
         self.actor_net.update_target_actor()
-        
+
+    def __random_without_same(self, mi, ma, num):
+        temp = range(mi, ma)
+        random.shuffle(temp)
+        return temp[0:num]
