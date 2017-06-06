@@ -3,20 +3,19 @@
 '''the clas of ddpg'''
 
 import numpy as np
-from rl_actor_class import ActorNet
+from actor_net_class import ActorNet
 from state_encoder import StateNet
 from critic_net import CriticNet
 from collections import deque
 import random
-from tensorflow_grad_inverter import grad_inverter
 from PIL import Image
 import pickle
 import data_save_restore
 
 # model path
-ACTORNET_PRE_TRAINED = ''
-STATENET_PRE_TRAINED = ''
-IMG_REFER = ''
+ACTORNET_PRE_TRAINED = '/home/wzl/design/pre_train_model_change_lr/099.ckpt'
+STATENET_PRE_TRAINED = '/home/wzl/design/encode_model_drop/099.ckpt'
+IMG_REFER = 'refer.tif'
 
 REPLAY_MEMORY_SIZE = 10000
 BATCH_SIZE = 64
@@ -28,7 +27,7 @@ class DDPG:
 
     """ Deep Deterministic Policy Gradient Algorithm"""
 
-    def __init__(self):
+    def __init__(self, actor_pre_trained, state_pre_trained):
         self.actor_net = ActorNet(ACTORNET_PRE_TRAINED)
         self.state_net = StateNet(STATENET_PRE_TRAINED)
 

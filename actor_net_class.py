@@ -204,70 +204,70 @@ class ActorNet:
             #--------------------------------------current input-------------------------------------------------------       
         
             self.t_conv1 = tf.nn.conv2d(self.t_x,self.t_conv1_w,strides=[1,1,1,1],padding="VALID",name='conv1') 
-            self.t_conv1_bn = batch_norm(self.t_conv1,self.t_is_training,self.t_sess,self.conv1_bn)
+            self.t_conv1_bn = batch_norm(self.t_conv1,self.t_is_training,self.sess,self.conv1_bn)
             self.t_conv1_relu = tf.nn.relu(self.t_conv1_bn.bnorm)
             self.t_pool1 = tf.nn.max_pool(self.t_conv1_relu,ksize=[1,2,2,1],strides=[1,2,2,1],padding="VALID")   
         
             self.t_conv2 = tf.nn.conv2d(self.t_pool1,self.t_conv2_w,strides=[1,1,1,1],padding="VALID",name='conv2')
-            self.t_conv2_bn = batch_norm(self.t_conv2,self.t_is_training,self.t_sess,self.conv2_bn)
+            self.t_conv2_bn = batch_norm(self.t_conv2,self.t_is_training,self.sess,self.conv2_bn)
             self.t_conv2_relu = tf.nn.relu(self.t_conv2_bn.bnorm)
             self.t_pool2 = tf.nn.max_pool(self.t_conv2_relu,ksize=[1,2,2,1],strides=[1,2,2,1],padding="VALID",name='pool2')
         
             self.t_conv3 = tf.nn.conv2d(self.t_pool2,self.t_conv3_w,strides=[1,1,1,1],padding="VALID",name = 'conv3') 
-            self.t_conv3_bn = batch_norm(self.t_conv3,self.t_is_training,self.t_sess,self.conv3_bn)
+            self.t_conv3_bn = batch_norm(self.t_conv3,self.t_is_training,self.sess,self.conv3_bn)
             self.t_conv3_relu = tf.nn.relu(self.t_conv3_bn.bnorm)    
         
             self.t_conv4 = tf.nn.conv2d(self.t_conv3,self.t_conv4_w,strides=[1,1,1,1],padding="VALID",name='conv4')
-            self.t_conv4_bn = batch_norm(self.t_conv4,self.t_is_training,self.t_sess,self.conv4_bn)
+            self.t_conv4_bn = batch_norm(self.t_conv4,self.t_is_training,self.sess,self.conv4_bn)
             self.t_conv4_relu = tf.nn.relu(self.t_conv4_bn.bnorm)    
         
             self.t_conv5 = tf.nn.conv2d(self.t_conv4,self.t_conv5_w,strides=[1,1,1,1],padding="VALID",name='conv5')
-            self.t_conv5_bn = batch_norm(self.t_conv5,self.t_is_training,self.t_sess,self.conv5_bn)
+            self.t_conv5_bn = batch_norm(self.t_conv5,self.t_is_training,self.sess,self.conv5_bn)
             self.t_conv5_relu = tf.nn.relu(self.t_conv5_bn.bnorm)
             self.t_pool3 = tf.nn.max_pool(self.t_conv5_relu,ksize=[1,2,2,1],strides=[1,2,2,1],padding="VALID",name='pool3')
             
             
             #-----------------------------------refer input---------------------------------------------------------------
             self.t_conv1_ = tf.nn.conv2d(self.t_x_,self.t_conv1_w_,strides=[1,1,1,1],padding="VALID",name='conv1_') 
-            self.t_conv1_bn_ = batch_norm(self.t_conv1_,self.t_is_training,self.t_sess,self.conv1_bn_)
+            self.t_conv1_bn_ = batch_norm(self.t_conv1_,self.t_is_training,self.sess,self.conv1_bn_)
             self.t_conv1_relu_ = tf.nn.relu(self.t_conv1_bn_.bnorm)
             self.t_pool1_ = tf.nn.max_pool(self.t_conv1_relu_,ksize=[1,2,2,1],strides=[1,2,2,1],padding="VALID",name='pool1_')   
         
             self.t_conv2_ = tf.nn.conv2d(self.t_pool1_,self.t_conv2_w_,strides=[1,1,1,1],padding="VALID",name='conv2_')
-            self.t_conv2_bn_ = batch_norm(self.t_conv2_,self.t_is_training,self.t_sess,self.conv2_bn_)
+            self.t_conv2_bn_ = batch_norm(self.t_conv2_,self.t_is_training,self.sess,self.conv2_bn_)
             self.t_conv2_relu_ = tf.nn.relu(self.t_conv2_bn_.bnorm)
             self.t_pool2_ = tf.nn.max_pool(self.t_conv2_relu_,ksize=[1,2,2,1],strides=[1,2,2,1],padding="VALID",name='pool2_')
         
             self.t_conv3_ = tf.nn.conv2d(self.t_pool2_,self.t_conv3_w_,strides=[1,1,1,1],padding="VALID",name='conv3_') 
-            self.t_conv3_bn_ = batch_norm(self.t_conv3_,self.t_is_training,self.t_sess,self.conv3_bn_)
+            self.t_conv3_bn_ = batch_norm(self.t_conv3_,self.t_is_training,self.sess,self.conv3_bn_)
             self.t_conv3_relu_ = tf.nn.relu(self.t_conv3_bn_.bnorm)    
         
             self.t_conv4_ = tf.nn.conv2d(self.t_conv3_,self.t_conv4_w_,strides=[1,1,1,1],padding="VALID",name='conv4_')
-            self.t_conv4_bn_ = batch_norm(self.t_conv4_,self.t_is_training,self.t_sess,self.conv4_bn_)
+            self.t_conv4_bn_ = batch_norm(self.t_conv4_,self.t_is_training,self.sess,self.conv4_bn_)
             self.t_conv4_relu_ = tf.nn.relu(self.t_conv4_bn_.bnorm)    
         
             self.t_conv5_ = tf.nn.conv2d(self.t_conv4_,self.t_conv5_w_,strides=[1,1,1,1],padding="VALID",name='conv5_')
-            self.t_conv5_bn_ = batch_norm(self.t_conv5_,self.t_is_training,self.t_sess,self.conv5_bn_)
+            self.t_conv5_bn_ = batch_norm(self.t_conv5_,self.t_is_training,self.sess,self.conv5_bn_)
             self.t_conv5_relu_ = tf.nn.relu(self.t_conv5_bn_.bnorm)
             self.t_pool3_ = tf.nn.max_pool(self.t_conv5_relu_,ksize=[1,2,2,1],strides=[1,2,2,1],padding="VALID",name='pool3_')
         
             self.t_concat=tf.concat(3,[self.t_pool3,self.t_pool3_])
         
             self.t_conv6 = tf.nn.conv2d(self.t_concat,self.t_conv6_w,strides=[1,1,1,1],padding="VALID",name='conv6') 
-            self.t_conv6_bn = batch_norm(self.t_conv6,self.t_is_training,self.t_sess,self.conv6_bn)
+            self.t_conv6_bn = batch_norm(self.t_conv6,self.t_is_training,self.sess,self.conv6_bn)
             self.t_conv6_relu = tf.nn.relu(self.t_conv6_bn.bnorm)   
         
             self.t_conv7 = tf.nn.conv2d(self.t_conv6,self.t_conv7_w,strides=[1,1,1,1],padding="VALID",name='conv7')
-            self.t_conv7_bn = batch_norm(self.t_conv7,self.t_is_training,self.t_sess,self.conv7_bn))
+            self.t_conv7_bn = batch_norm(self.t_conv7,self.t_is_training,self.sess,self.conv7_bn)
             self.t_conv7_relu = tf.nn.relu(self.t_conv7_bn.bnorm) 
             self.t_pool7 = tf.nn.avg_pool(self.t_conv7_relu, ksize=[1,3,3,1],strides=[1,3,3,1],padding="SAME",name='pool7' )
         
             self.t_conv8 = tf.nn.conv2d(self.t_pool7,self.t_conv8_w,strides=[1,1,1,1],padding = "SAME",name='conv8')
-            self.t_conv8_bn = batch_norm(self.t_conv8,self.t_is_training,self.t_sess,self.conv8_bn))
+            self.t_conv8_bn = batch_norm(self.t_conv8,self.t_is_training,self.sess,self.conv8_bn)
             self.t_conv8_relu = tf.nn.relu(self.t_conv8_bn.bnorm)
         
             self.t_conv9 = tf.nn.conv2d(self.t_conv8,self.t_conv9_w,strides=[1,1,1,1],padding = "VALID",name='conv9')
-            self.t_conv9_bn = batch_norm(self.t_conv9,self.t_is_training,self.t_sess,self.conv9_bn))
+            self.t_conv9_bn = batch_norm(self.t_conv9,self.t_is_training,self.sess,self.conv9_bn)
         
             self.t_pool9 = tf.nn.avg_pool(self.t_conv9_bn.bnorm, ksize=[1,2,2,1],strides=[1,2,2,1],padding="VALID",name='pool9')
         
@@ -300,9 +300,9 @@ class ActorNet:
             self.actor_parameters = [self.conv1_w,self.conv2_w,self.conv3_w,self.conv4_w,self.conv5_w, self.conv1_w_,self.conv2_w_,self.conv3_w_,self.conv4_w_,\
                                      self.conv5_w_, self.conv6_w,self.conv7_w,self.conv8_w,self.conv9_w,self.fc1_w,self.fc1_b,self.fc2_w,self.fc2_b,\
                                      self.conv1_bn.scale,self.conv1_bn.beta,self.conv2_bn.scale,self.conv2_bn.beta,self.conv3_bn.scale,self.conv3_bn.beta,\
-                                     self.conv4_bn.scale,self.conv4_bn.beta,self.conv5_bn.scale,self.conv5_bn.beta,self.conv1_bn_.scale,self.conv1_bn_.beta_,\
+                                     self.conv4_bn.scale,self.conv4_bn.beta,self.conv5_bn.scale,self.conv5_bn.beta,self.conv1_bn_.scale,self.conv1_bn_.beta,\
                                      self.conv2_bn_.scale,self.conv2_bn_.beta,self.conv3_bn_.scale,self.conv3_bn_.beta,self.conv4_bn_.scale,self.conv4_bn_.beta,\
-                                     self.conv5_bn_.scale,self.conv5_bn_.beta,self.conv6.bn.scale,self.conv6_bn.beta,self.conv7_bn.scale,self.conv7_bn.beta,\
+                                     self.conv5_bn_.scale,self.conv5_bn_.beta,self.conv6_bn.scale,self.conv6_bn.beta,self.conv7_bn.scale,self.conv7_bn.beta,\
                                      self.conv8_bn.scale,self.conv8_bn.beta,self.conv9_bn.scale,self.conv9_bn.beta ]
 
             self.parameters_gradients = tf.gradients(self.fc2,self.actor_parameters,-self.q_gradient_input)#/BATCH_SIZE) changed -self.q_gradient to -
@@ -311,8 +311,8 @@ class ActorNet:
             #initialize all tensor variable parameters:
             #self.sess.run(tf.initialize_all_variables()) 
             #-----------------------------------------------------------------------------
-            self.saver.restore(model)
-            self.t_saver.restore(model)            
+            self.saver.restore(self.sess, model)
+            self.t_saver.restore(self.sess, model)            
             
     def evaluate_actor(self,x,x_,is_training=False):
         return self.sess.run(self.fc2, feed_dict={self.x:x,self.x_:x_,self.is_training:is_training}) 

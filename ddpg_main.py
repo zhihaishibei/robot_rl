@@ -5,12 +5,13 @@
 import numpy as np
 from ddpg import DDPG
 from ou_noise import OUNoise
-from img_server import ImgServer
 from PIL import Image
 # specify parameters here:
 EPISODES = 10000
 ACTION_DIM = 6
 REFER_IMG = np.array(Image.open('refer.tif'))
+ACTORNET_PRE_TRAINED = '/home/wzl/design/pre_train_model_change_lr/099.ckpt'
+STATENET_PRE_TRAINED = '/home/wzl/design/encode_model_drop/099.ckpt'
 
 
 def convert_img2data(img):
@@ -31,7 +32,7 @@ def main():
     '''main function'''
 
     # Randomly initialize critic,actor,target critic, target actor network  and replay buffer
-    agent = DDPG()
+    agent = DDPG(ACTORNET_PRE_TRAINED, STATENET_PRE_TRAINED)
     exploration_noise = OUNoise(ACTION_DIM)
     # saving reward:
     reward_st = np.array([0])
